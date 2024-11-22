@@ -1,9 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:scanner/config/navigation.dart';
 import 'package:scanner/pages/pdfPage/pdf_viewer_screen.dart';
+import 'package:scanner/services/ad_service.dart';
+import 'package:scanner/services/appServices.dart';
 import 'package:scanner/sevices/data.dart';
 import 'package:scanner/utils/colors.dart';
+import 'package:share_plus/share_plus.dart';
 
 class HomeBody extends StatefulWidget {
   const HomeBody({super.key});
@@ -14,9 +18,26 @@ class HomeBody extends StatefulWidget {
 
 class _HomeBodyState extends State<HomeBody> {
   Navigations nav = Navigations();
-  
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBannerAd();
+  }
+
+  void _loadBannerAd() {
+    AdService.bannerAd = AdService.createBannerAd()..load();
+  }
+
+  @override
+  void dispose() {
+    AdService.bannerAd?.dispose();
+    super.dispose();
+  }
+
   viewPdf(File file, context) {
-    nav.push(context, PDFViewerScreen(file: file, fileName: file.path.split('/').last));
+    nav.push(context,
+        PDFViewerScreen(file: file, fileName: file.path.split('/').last));
   }
 
   @override
@@ -25,37 +46,41 @@ class _HomeBodyState extends State<HomeBody> {
       children: [
         Container(
           margin: const EdgeInsets.all(16),
-          height: 150,
+          height: 100,
           decoration: BoxDecoration(
             color: colors.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: colors.primary.withOpacity(0.3)
-            ),
+            border: Border.all(color: colors.primary.withOpacity(0.3)),
           ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.ad_units, 
-                  size: 40, 
-                  color: colors.primary
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Advertisement Space",
-                  style: TextStyle(
-                    color: colors.primary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(15),
+            child: AdService.bannerAd != null
+                ? Center(
+                    child: SizedBox(
+                      width: AdService.bannerAd!.size.width.toDouble(),
+                      height: AdService.bannerAd!.size.height.toDouble(),
+                      child: AdWidget(ad: AdService.bannerAd!),
+                    ),
+                  )
+                : Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.ad_units, size: 40, color: colors.primary),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Advertisement Space",
+                          style: TextStyle(
+                            color: colors.primary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
           ),
         ),
-
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(
@@ -67,7 +92,6 @@ class _HomeBodyState extends State<HomeBody> {
             ),
           ),
         ),
-
         Expanded(
           child: FutureBuilder(
             future: OldPdf.fetchPdfFiles(),
@@ -79,6 +103,7 @@ class _HomeBodyState extends State<HomeBody> {
               }
               if (snp.hasData) {
                 final data = snp.data;
+                print(data);
                 if (data != null && data.isNotEmpty) {
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -87,14 +112,14 @@ class _HomeBodyState extends State<HomeBody> {
                       final file = data[index];
                       final fileName = file.path.split('/').last;
                       final modifiedDate = file.lastModifiedSync().toLocal();
-                      
+
                       return Card(
                         elevation: 2,
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        color: Theme.of(context).cardColor,
+                        color: colors.themeColor,
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -117,14 +142,41 @@ class _HomeBodyState extends State<HomeBody> {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           subtitle: Text(
-                            "${modifiedDate.day}/${modifiedDate.month}/${modifiedDate.year} ${modifiedDate.hour}:${modifiedDate.minute}",
+                            "${modifiedDate.day}/${modifiedDate.month}/${modifiedDate.year}   ${modifiedDate.hour}:${modifiedDate.minute}",
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.more_vert),
-                            onPressed: () {
-                              // Add options menu here (delete, share, etc.)
-                            },
+                          trailing: SizedBox(
+                            width: 100,
+                            child: FittedBox(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  IconButton(
+                                      onPressed: () {
+                                        Appservices.fileShare(file.path);
+                                      },
+                                      icon: Icon(
+                                        Icons.share,
+                                        color: colors.primary,
+                                        size: 30,
+                                      )),
+                                  IconButton(
+                                      onPressed: () async {
+                                        await Appservices.deleteFile(file.path);
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(SnackBar(
+                                          content: Text(Messages.EdeleteMSj),
+                                        ));
+                                        setState(() {});
+                                      },
+                                      icon: Icon(
+                                        Icons.delete,
+                                        color: colors.primary,
+                                        size: 30,
+                                      ))
+                                ],
+                              ),
+                            ),
                           ),
                           onTap: () => viewPdf(file, context),
                         ),
@@ -132,11 +184,9 @@ class _HomeBodyState extends State<HomeBody> {
                     },
                   );
                 }
-                return _buildEmptyState(
-                  OldPdf.searchQuery.isEmpty 
-                    ? "No PDF files found" 
-                    : "No matching PDFs found"
-                );
+                return _buildEmptyState(OldPdf.searchQuery.isEmpty
+                    ? "No PDF files found"
+                    : "No matching PDFs found");
               }
               return _buildEmptyState("No PDF files found");
             },

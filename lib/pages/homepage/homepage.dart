@@ -50,10 +50,7 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         foregroundColor: colors.themeColor,
         backgroundColor: colors.primary,
-        leading: IconButton(
-          onPressed: () {}, 
-          icon: const Icon(Icons.menu)
-        ),
+        
         title: isSearching
           ? TextField(
               controller: searchController,

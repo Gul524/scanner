@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:scanner/config/navigation.dart';
+import 'package:scanner/pages/adsSecreens/openadsSecreen.dart';
+import 'package:scanner/pages/homepage/allfileTab/oldFiles.dart';
 import 'package:scanner/pages/homepage/homepage.dart';
 import 'package:scanner/pages/splashpage/splashwidgets.dart';
+import 'package:scanner/services/ad_service.dart';
 import 'package:scanner/sevices/data.dart';
 import 'package:scanner/sevices/permissionfunctions.dart';
 import 'package:scanner/utils/assets.dart';
@@ -29,11 +32,19 @@ class _SplashpageState extends State<Splashpage> {
   void initState() {
     super.initState();
     checkPermission();
-    OldPdf.getDir();
+    AdService.loadAppOpenAd();
+    
     Timer(const Duration(seconds: 2), () {
       nav.replace(context, const HomePage());
     });
   }
+  @override
+void dispose() {
+  if(AdService.bannerAd != null){
+    AdService.bannerAd!.dispose();
+  }
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {

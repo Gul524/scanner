@@ -160,7 +160,7 @@ class _SelectionImagesState extends State<SelectionImages> {
                 ] else
                   Column(
                     children: [
-                      Padding(
+                      Padding( 
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
                           children: [

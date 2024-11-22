@@ -87,9 +87,7 @@ class ImageToPDFLogic {
                 initAspectRatio: CropAspectRatioPreset.original,
                 statusBarColor: colors.primary,
               ),
-              IOSUiSettings(
-                title: 'Crop Image ${images.indexOf(image) + 1}/${images.length}',
-              ),
+              
             ],
             compressQuality: 100,
           );
